@@ -10,24 +10,44 @@ const route = useRoute()
 const { userId, country, year } = route.params;
 const predictions = [
     {
-        category: 'pole',
+        category: 'q_p1',
+        title: 'Pole',
         prediction: 63,
         correct: null
     }, {
         category: 'p1',
+        title: 'Winner',
         prediction: 63,
         correct: null
     }, {
         category: 'p2',
+        title: 'P2',
         prediction: 12,
         correct: null
     }, {
         category: 'p3',
+        title: 'P3',
         prediction: 16,
         correct: null
     }, {
+        category: 'positions_gained_count',
+        title: 'Most Positions<br>Gained',
+        prediction: 8,
+        correct: null
+    }, {
+        category: 'positions_gained_driver',
+        title: 'Most Positions<br>Gained Driver',
+        prediction: 3,
+        correct: null
+    }, {
         category: 'dnf_count',
+        title: 'DNFs',
         prediction: 4,
+        correct: null
+    }, {
+        category: 'safety_car_lap',
+        title: 'Safety Car<br>by Lap',
+        prediction: 20,
         correct: null
     }
 ];
@@ -39,39 +59,89 @@ axios.get(`https://api.openf1.org/v1/sessions?country_name=${country}&year=${yea
     const gpSession = sessions?.data.find(_s => _s.session_name == 'Race');
     
     if (!!qualifyingSession && !!gpSession) {
-        Promise.all([
-            axios.get(`https://api.openf1.org/v1/starting_grid?session_key=${qualifyingSession.session_key}&position%3C=4`),
-            axios.get(`https://api.openf1.org/v1/session_result?session_key=${gpSession.session_key}`)
-        ]).then(res => {
-            const startingGrid = res[0];
-            const raceResult = res[1];
-            
-            parsedResults.value = {
-                pole: startingGrid?.data[0]?.driver_number,
-                p1: raceResult?.data[0]?.driver_number,
-                p2: raceResult?.data[1]?.driver_number,
-                p3: raceResult?.data[2]?.driver_number,
-                dnf_count: raceResult?.data?.filter(_driver => _driver.dnf).length,
-                dns_count: raceResult?.data?.filter(_driver => _driver.dns).length,
-                dsq_count: raceResult?.data?.filter(_driver => _driver.dsq).length
-            }
+        // 'Temp' hack to get around the free api throttling
+        setTimeout(() => {
+            Promise.all([
+                axios.get(`https://api.openf1.org/v1/starting_grid?session_key=${qualifyingSession.session_key}`),
+                axios.get(`https://api.openf1.org/v1/session_result?session_key=${gpSession.session_key}`),
+                axios.get(`https://api.openf1.org/v1/race_control?session_key=${gpSession.session_key}&category=SafetyCar`)
+            ]).then(res => {
+                const startingGrid = res[0];
+                const raceResult = res[1];
+                const safetyCar = res[2];
 
-            predictions.forEach(_prediction => {
-                _prediction.correct = parsedResults.value[_prediction.category] == _prediction.prediction;
-            })
-        }).catch(() => {
-            errorMessage.value = 'Failed to find race results';
-        });
+                let positionsGained = null;
+                let positionsLost = null;
+                let firstSafetyCarLap = null;
+
+                raceResult?.data.forEach(finishingPosition => {
+                    const startingPosition = startingGrid?.data.find(_d => _d.driver_number == finishingPosition.driver_number);
+
+                    if (finishingPosition.position && startingPosition?.position && !(finishingPosition.dnf || finishingPosition.dns)) {
+                        const difference = startingPosition.position - finishingPosition.position
+                        
+                        if (positionsGained == null || difference > positionsGained.difference)
+                            positionsGained = {
+                                ...finishingPosition,
+                                difference
+                            };
+
+                        if (positionsLost == null || difference < positionsLost.difference)
+                            positionsLost = {
+                                ...finishingPosition,
+                                difference
+                            };
+                    }
+                });
+
+                if (!!safetyCar?.data?.length) {
+                    const firstDeploy = safetyCar?.data?.find(_message => _message.message == 'SAFETY CAR DEPLOYED');
+
+                    if (!!firstDeploy)
+                        firstSafetyCarLap = firstDeploy.lap_number;
+                }
+
+                parsedResults.value = {
+                    q_p1: startingGrid?.data[0]?.driver_number,
+                    q_p2: startingGrid?.data[1]?.driver_number,
+                    q_p3: startingGrid?.data[2]?.driver_number,
+                    q_p4: startingGrid?.data[3]?.driver_number,
+                    q_p5: startingGrid?.data[4]?.driver_number,
+                    p1: raceResult?.data[0]?.driver_number,
+                    p2: raceResult?.data[1]?.driver_number,
+                    p3: raceResult?.data[2]?.driver_number,
+                    p4: raceResult?.data[3]?.driver_number,
+                    p5: raceResult?.data[4]?.driver_number,
+                    dnf_count: raceResult?.data?.filter(_driver => _driver.dnf).length,
+                    dns_count: raceResult?.data?.filter(_driver => _driver.dns).length,
+                    dsq_count: raceResult?.data?.filter(_driver => _driver.dsq).length,
+                    positions_gained_count: positionsGained.difference,
+                    positions_gained_driver: positionsGained.driver_number,
+                    positions_lost_count: positionsLost.difference,
+                    positions_lost_driver: positionsLost.driver_number,
+                    safety_car_lap: firstSafetyCarLap
+                };
+
+                predictions.forEach(_prediction => {
+                    const { category, prediction } = _prediction;
+                    const answer = parsedResults.value[category];
+
+                    if (category == 'safety_car_lap') {
+                        _prediction.correct = answer != null && prediction <= answer;
+                    } else {
+                        _prediction.correct = answer == prediction;
+                    }
+                });
+            }).catch(() => {
+                errorMessage.value = 'Failed to find race results';
+            });
+        }, 1200);
     } else {
         errorMessage.value = 'Missing required sessions';
     }
 }).catch(() => {
     errorMessage.value = 'Invalid Session';
 });
-
-function readableCat(cat) {
-    return cat.replace('_', ' ').toUpperCase();
-}
 </script>
 
 <template>
@@ -94,17 +164,19 @@ function readableCat(cat) {
             }"
         >
             <span class="prediction-category">
-                {{ readableCat(prediction.category) }}
+                <span class="text-container" v-html="prediction.title"></span>
             </span>
             
-            <span class="prediction-prediction">
+            <span class="prediction-prediction text-container">
                 {{ drivers[prediction.prediction]?.last_name || prediction.prediction }}
             </span>
 
-            <img v-if="!prediction.category.includes('count')" :src="`/drivers/${drivers[prediction.prediction]?.profile}`" />
-            <span class="prediction-result">
+            <img v-if="!prediction.category.includes('count') && !prediction.category.includes('lap')"
+                :src="`/drivers/${drivers[prediction.prediction]?.profile}`"
+            />
+            <!-- <span class="prediction-result">
                 {{ prediction.correct ? '&#10003;' : '&#120;' }}
-            </span>
+            </span> -->
         </div>
 
         <h2 style="margin-top: 60px">
@@ -128,6 +200,9 @@ h1, h2, h3 {
 .prediction-container {
     position: relative;
 
+    height: 75px;
+    max-width: 650px;
+
     padding: 0px 0px;
     margin: 20px auto;
 
@@ -135,6 +210,8 @@ h1, h2, h3 {
     border-radius: 20px;
 
     font-size: 28px;
+
+    line-height: 73px;
 
     overflow: hidden
 }
@@ -145,18 +222,26 @@ h1, h2, h3 {
     border-color: red;
 }
 
-.prediction-category,
-.prediction-prediction {
+.text-container {
     display: inline-block;
-    padding: 20px 20px;
-
+    vertical-align: middle;
+    line-height: normal;
     text-align: center;
 }
 .prediction-category {
+    display: inline-block;
+
+    height: 100%;
     width: 33%;
     min-width: 100px;
 
     background-color: #1e1f28;
+}
+.prediction-category>.text-container {
+    width: 100%;
+}
+.prediction-prediction {
+    padding: 0px 20px;
 }
 .prediction-container img {
     position: absolute;
