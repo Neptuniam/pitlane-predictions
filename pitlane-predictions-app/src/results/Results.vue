@@ -1,152 +1,38 @@
 <script setup>
-import axios from 'axios';
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { drivers } from '@/data/drivers.js';
 
-const route = useRoute()
+import { fetchUserInfo, fetchPredictions } from '@/dummy_data/actions.js';
 
+const route = useRoute();
 const { userId, country, year } = route.params;
-const predictions = [
-    {
-        category: 'q_p1',
-        title: 'Pole',
-        prediction: 63,
-        correct: null
-    }, {
-        category: 'p1',
-        title: 'Winner',
-        prediction: 63,
-        correct: null
-    }, {
-        category: 'p2',
-        title: 'P2',
-        prediction: 12,
-        correct: null
-    }, {
-        category: 'p3',
-        title: 'P3',
-        prediction: 16,
-        correct: null
-    }, {
-        category: 'positions_gained_count',
-        title: 'Most Positions<br>Gained',
-        prediction: 8,
-        correct: null
-    }, {
-        category: 'positions_gained_driver',
-        title: 'Most Positions<br>Gained Driver',
-        prediction: 3,
-        correct: null
-    }, {
-        category: 'dnf_count',
-        title: 'DNFs',
-        prediction: 4,
-        correct: null
-    }, {
-        category: 'safety_car_lap',
-        title: 'Safety Car<br>by Lap',
-        prediction: 20,
-        correct: null
-    }
-];
-const parsedResults = ref();
+
+const user = ref();
+const league = ref();
 const errorMessage = ref();
+const predictions = ref();
+const pointsEarned = ref();
 
-axios.get(`https://api.openf1.org/v1/sessions?country_name=${country}&year=${year}`).then(sessions => {
-    const qualifyingSession = sessions?.data.find(_s => _s.session_name == 'Qualifying');
-    const gpSession = sessions?.data.find(_s => _s.session_name == 'Race');
+fetchUserInfo(userId).then(res => {
+    user.value = res.user;
+    league.value = res.league;
+})
+
+fetchPredictions(userId, country, year).then(_predictions => {
+    console.log('_predictions', _predictions);
     
-    if (!!qualifyingSession && !!gpSession) {
-        // 'Temp' hack to get around the free api throttling
-        setTimeout(() => {
-            Promise.all([
-                axios.get(`https://api.openf1.org/v1/starting_grid?session_key=${qualifyingSession.session_key}`),
-                axios.get(`https://api.openf1.org/v1/session_result?session_key=${gpSession.session_key}`),
-                axios.get(`https://api.openf1.org/v1/race_control?session_key=${gpSession.session_key}&category=SafetyCar`)
-            ]).then(res => {
-                const startingGrid = res[0];
-                const raceResult = res[1];
-                const safetyCar = res[2];
-
-                let positionsGained = null;
-                let positionsLost = null;
-                let firstSafetyCarLap = null;
-
-                raceResult?.data.forEach(finishingPosition => {
-                    const startingPosition = startingGrid?.data.find(_d => _d.driver_number == finishingPosition.driver_number);
-
-                    if (finishingPosition.position && startingPosition?.position && !(finishingPosition.dnf || finishingPosition.dns)) {
-                        const difference = startingPosition.position - finishingPosition.position
-                        
-                        if (positionsGained == null || difference > positionsGained.difference)
-                            positionsGained = {
-                                ...finishingPosition,
-                                difference
-                            };
-
-                        if (positionsLost == null || difference < positionsLost.difference)
-                            positionsLost = {
-                                ...finishingPosition,
-                                difference
-                            };
-                    }
-                });
-
-                if (!!safetyCar?.data?.length) {
-                    const firstDeploy = safetyCar?.data?.find(_message => _message.message == 'SAFETY CAR DEPLOYED');
-
-                    if (!!firstDeploy)
-                        firstSafetyCarLap = firstDeploy.lap_number;
-                }
-
-                parsedResults.value = {
-                    q_p1: startingGrid?.data[0]?.driver_number,
-                    q_p2: startingGrid?.data[1]?.driver_number,
-                    q_p3: startingGrid?.data[2]?.driver_number,
-                    q_p4: startingGrid?.data[3]?.driver_number,
-                    q_p5: startingGrid?.data[4]?.driver_number,
-                    p1: raceResult?.data[0]?.driver_number,
-                    p2: raceResult?.data[1]?.driver_number,
-                    p3: raceResult?.data[2]?.driver_number,
-                    p4: raceResult?.data[3]?.driver_number,
-                    p5: raceResult?.data[4]?.driver_number,
-                    dnf_count: raceResult?.data?.filter(_driver => _driver.dnf).length,
-                    dns_count: raceResult?.data?.filter(_driver => _driver.dns).length,
-                    dsq_count: raceResult?.data?.filter(_driver => _driver.dsq).length,
-                    positions_gained_count: positionsGained.difference,
-                    positions_gained_driver: positionsGained.driver_number,
-                    positions_lost_count: positionsLost.difference,
-                    positions_lost_driver: positionsLost.driver_number,
-                    safety_car_lap: firstSafetyCarLap
-                };
-
-                predictions.forEach(_prediction => {
-                    const { category, prediction } = _prediction;
-                    const answer = parsedResults.value[category];
-
-                    if (category == 'safety_car_lap') {
-                        _prediction.correct = answer != null && prediction <= answer;
-                    } else {
-                        _prediction.correct = answer == prediction;
-                    }
-                });
-            }).catch(() => {
-                errorMessage.value = 'Failed to find race results';
-            });
-        }, 1200);
-    } else {
-        errorMessage.value = 'Missing required sessions';
-    }
-}).catch(() => {
-    errorMessage.value = 'Invalid Session';
+    predictions.value = _predictions;
+    pointsEarned.value = _predictions.reduce((n, { correct, points }) => n + (correct ? points : 0), 0);
+}).catch(_error => {
+    errorMessage.value = _error;
 });
 </script>
 
 <template>
     <h1>
-        Your Prediction Results
+        {{ user?.first_name || 'Your' }} Prediction Results
     </h1>
     <h3>
         {{ country }}, {{ year }}
@@ -155,12 +41,14 @@ axios.get(`https://api.openf1.org/v1/sessions?country_name=${country}&year=${yea
     <div v-if="!!errorMessage" class="error-message">
         {{ errorMessage }}
     </div>
-    <div v-else-if="!!parsedResults" style="margin: 60px auto; padding: 0px 10px">
+    <div v-else-if="!!predictions && !!predictions.length" style="margin: 60px auto; padding: 0px 30px">
         <div v-for="prediction in predictions"
             class="prediction-container"
             :class="{
                 'correct': prediction.correct,
-                'in-correct': !prediction.correct
+                'in-correct': !prediction.correct,
+                'type-driver': prediction.type == 'driver',
+                'type-team': prediction.type == 'team'
             }"
         >
             <span class="prediction-category">
@@ -171,16 +59,11 @@ axios.get(`https://api.openf1.org/v1/sessions?country_name=${country}&year=${yea
                 {{ drivers[prediction.prediction]?.last_name || prediction.prediction }}
             </span>
 
-            <img v-if="!prediction.category.includes('count') && !prediction.category.includes('lap')"
-                :src="`/drivers/${drivers[prediction.prediction]?.profile}`"
-            />
-            <!-- <span class="prediction-result">
-                {{ prediction.correct ? '&#10003;' : '&#120;' }}
-            </span> -->
+            <img v-if="!!prediction.profile" :src="prediction.profile" />
         </div>
 
         <h2 style="margin-top: 60px">
-            Total Points Earned: {{ predictions.filter(_p => _p.correct)?.length }}
+            Total Points Earned: {{ pointsEarned }}
         </h2>
     </div>
 </template>
@@ -248,9 +131,15 @@ h1, h2, h3 {
     top: 0px;
     right: 0px;
 
-    height: 100px;
-
     object-fit: contain;
+}
+.prediction-container.type-driver img {
+    height: 100px;
+}
+.prediction-container.type-team img {
+    height: 60px;
+    padding-top: 7.5px;
+    padding-right: 10px;
 }
 .prediction-result {
     position: absolute;

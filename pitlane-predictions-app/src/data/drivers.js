@@ -135,8 +135,8 @@ export const drivers = {
         full_name: 'Nico Hulkenberg',
         profile: 'hulkenberg.png'
     },
-    41: {
-        number: 41,
+    5: {
+        number: 5,
         team: 'Audi',
         first_name: 'Gabriel',
         last_name: 'Bortoleto',
