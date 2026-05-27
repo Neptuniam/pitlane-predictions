@@ -8,8 +8,16 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { fetchUserInfo } from '@/dummy_data/actions.js';
 
+const route = useRoute();
+const router = useRouter();
+
+const userId = ref();
+const leagueId = ref();
+const routeName = ref();
+
 const user = ref();
 const leagues = ref();
+const league = computed(() => !!leagueId.value && !!leagues.value?.length ? leagues.value.find(_league => _league.id == leagueId.value) : null);
 
 const items = ref([
     {
@@ -33,11 +41,6 @@ const items = ref([
         }
     }
 ]);
-const userId = ref();
-const leagueId = ref();
-const routeName = ref();
-const route = useRoute();
-const router = useRouter();
 
 // HACK: route.params isn't inited properly outside of router-view
 setTimeout(() => {
@@ -46,20 +49,25 @@ setTimeout(() => {
     routeName.value = route.name;
 
     fetchUserInfo(userId.value).then(res => {
+        console.log(res);
+        
         user.value = res.user;
         leagues.value = res.leagues;
 
         items.value[1].items = res.leagues.map(_league => ({
             id: _league.id,
             label: _league.name,
-            to: `/leagues/${_league.id}/${userId.value}`
+            to: `/league/${_league.id}/${userId.value}`
         }));
     })
 }, 100)
 
 function jumpToPage(item) {
-    if (item.to)
+    if (item.to) {
         router.push({ path: item.to })
+        leagueId.value = item.id;
+        routeName.value = item.name;
+    }
 }
 </script>
 
@@ -69,9 +77,9 @@ function jumpToPage(item) {
             <template #start>
                 <Avatar image="/logo.jpg" shape="square" />
                 
-                <span style="position: absolute; left: 90px">
-                    {{ routeName }}
-                </span>
+                <!-- <span style="position: absolute; left: 90px">
+                    {{ league?.name || routeName }}
+                </span> -->
             </template>
             <template #item="{ item, props, hasSubmenu, root }">
                 <div v-ripple class="flex items-center" :class="{ 'active-league': leagueId && item.id == leagueId }" @click="jumpToPage(item)" v-bind="props.action">
@@ -90,7 +98,7 @@ function jumpToPage(item) {
             </template>
         </Menubar>
 
-        <RouterView :user="user" />
+        <RouterView v-if="!!user" :user="user" :league="league" />
     </main>
 </template>
 

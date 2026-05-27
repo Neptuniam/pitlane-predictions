@@ -3,12 +3,26 @@ export const users = [
         id: 0,
         first_name: 'Liam',
         last_name: 'Jones',
-        league_id: '23de2-32wds-dsd23'
     }, {
         id: 1,
         first_name: 'Kathryn',
         last_name: 'Darling Jones',
-        league_id: 'h3j2-h62h-fds6'
+    }, {
+        id: 2,
+        first_name: 'Amelia',
+        last_name: 'Darling Jones',
+    }, {
+        id: 3,
+        first_name: 'Carter',
+        last_name: 'Bourette',
+    }, {
+        id: 4,
+        first_name: 'Matt',
+        last_name: 'P1',
+    }, {
+        id: 5,
+        first_name: 'Tommy',
+        last_name: 'P1',
     }
 ]
 
@@ -18,7 +32,9 @@ export const leagues = [
         name: 'First Ever Predictions League',
         users: [
             0,
-            1
+            1,
+            3,
+            2
         ],
         categories: [
             '3231',
@@ -35,8 +51,9 @@ export const leagues = [
         id: 'das34-g5h3-34gds',
         name: 'Matt & Tommy\'s Public League',
         users: [
+            5,
             0,
-            1
+            4,
         ],
         categories: [
             '3231',

@@ -1,10 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import League from '../pages/League.vue';
 import Results from '../pages/Results.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { 
+      name: 'League',
+      path: '/league/:leagueId/:userId', 
+      component: League
+    },
     { 
       name: 'Results',
       path: '/results/:leagueId/:userId', 

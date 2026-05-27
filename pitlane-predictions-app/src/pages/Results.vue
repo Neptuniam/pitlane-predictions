@@ -11,16 +11,16 @@ const props = defineProps({
     user: Object
 });
 
+const today = new Date();
 const route = useRoute();
 const userId = ref(+route.params.userId);
 const countryId = ref(+route.query.countryId);
-const year = ref(+route.query.year || 2026);
+const year = ref(+route.query.year || today.getFullYear());
 const errorMessage = ref();
 const predictions = ref(null);
 const pointsEarned = ref(0);
 const page = ref();
 const pageCount = ref();
-const today = new Date();
 
 const calendarEvent = computed(() => {
     if (countryId.value === undefined || year.value === undefined)
@@ -70,17 +70,17 @@ function changePage() {
 </script>
 
 <template>
-<div id="Results">
-    <h1 class="page-title">
+<div id="Results" class="page-container">
+    <div class="page-title">
         {{ props.user?.first_name || 'Your' }}'s Prediction Results
-    </h1>
-    <h3 class="page-sub-title">
+    </div>
+    <div class="page-sub-title">
         {{ calendarEvent.track || calendarEvent.country }}, {{ year }}
-    </h3>
+    </div>
 
-    <h3 class="page-sub-title" style="margin: 20px auto 40px">
+    <div class="page-sub-title" style="margin: 20px auto 40px">
         Total Points Earned: {{ pointsEarned }}
-    </h3>
+    </div>
 
     <div v-if="!!errorMessage" class="error-message">
         {{ errorMessage }}
@@ -141,16 +141,10 @@ function changePage() {
 
 <style scoped>
 #Results {
-    position: relative;
 
-    padding: 30px 30px 0px 30px;
-    width: 100%;
-
-    max-width: 640px;
-    margin: auto;
 }
 h1, h2, h3 {
-    text-align: center;
+    
 }
 .error-message {
     font-size: 22px;

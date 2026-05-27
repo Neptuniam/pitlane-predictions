@@ -6,15 +6,20 @@ import { categories } from '@/data/categories.js';
 import { users, leagues, predictions } from './config.js';
 
 export const fetchUserInfo = (userId) => {
-    console.log('grabbing', userId);
-    console.log(users, leagues);
-    
-    
     return new Promise(resolve => {
         setTimeout(() => {
             resolve({
                 user: users.find(_user => _user.id == userId),
-                leagues: leagues.filter(_league => _league.users.includes(+userId))
+                leagues: leagues.filter(_league => _league.users.includes(+userId)).map(_league => ({
+                    ..._league,
+                    users: _league.users.map((_userId, index) => ({
+                        ...users.find(__user => __user.id == _userId),
+                        points: Math.ceil(Math.floor(Math.random() * (8 - 1 + 1) + 1) * ((_league.users.length - index) * 1.5))
+                    })).sort((a, b) => b.points - a.points).map((_user, index) => ({
+                        ..._user,
+                        position: index + 1
+                    }))
+                }))
             });
         }, 100);
     });
