@@ -74,7 +74,7 @@ export const categories = [
     }, {
         id: '6453',
         key: 'most_points_team',
-        title: 'Highest Scoring Team',
+        title: 'Highest<br>Scoring Team',
         type: 'team',
         points: 1
     }, {
@@ -106,7 +106,7 @@ export const categories = [
         key: 'positions_gained_driver',
         title: 'Most Positions<br>Gained Driver',
         type: 'driver',
-        points: 1
+        points: 2
     }, {
         id: '7657',
         key: 'positions_lost_count',
@@ -118,7 +118,7 @@ export const categories = [
         key: 'positions_lost_driver',
         title: 'Most Positions<br>Lost Driver',
         type: 'driver',
-        points: 1
+        points: 2
     }, {
         id: '4234',
         key: 'safety_car_lap',

@@ -6,11 +6,15 @@ import { categories } from '@/data/categories.js';
 import { users, leagues, predictions } from './config.js';
 
 export const fetchUserInfo = (userId) => {
+    console.log('grabbing', userId);
+    console.log(users, leagues);
+    
+    
     return new Promise(resolve => {
         setTimeout(() => {
             resolve({
                 user: users.find(_user => _user.id == userId),
-                league: leagues.find(_league => _league.users.includes(+userId))
+                leagues: leagues.filter(_league => _league.users.includes(+userId))
             });
         }, 100);
     });

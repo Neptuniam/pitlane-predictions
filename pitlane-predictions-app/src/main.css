@@ -1,0 +1,33 @@
+html {
+    --text-title-size: calc(18px * 1.6);
+    --text-body-size: 18px;
+    --text-sub-body-size: calc(18px / 1.6);
+
+    --text-section-title-size: calc(26px * 1.6);
+    --text-section-sub-size: 26px;
+
+    overflow-x: hidden;
+
+    --colour-success: #00dc82;
+    --colour-error: #ff4d4d;
+
+    --background-color-0: oklch(20.8% 0.042 265.755);
+    --background-color-1: oklch(27.9% .041 260.031);
+    --background-color-2: oklch(35% 0.040 254);
+    --background-color-3: oklch(42.1% 0.035 248);
+
+
+
+    background-color: var(--background-color-0);
+    color: #eae4e4
+}
+
+
+.page-title {
+    font-size: var(--text-title-size);
+    font-weight: 700;
+}
+.page-sub-title {
+    font-size: calc(18px * 1.2);
+    font-weight: 500;
+}
