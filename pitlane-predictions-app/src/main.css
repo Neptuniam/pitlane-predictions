@@ -1,4 +1,4 @@
-html {
+html, :root, :host {
     --text-title-size: calc(18px * 1.6);
     --text-body-size: 18px;
     --text-sub-body-size: calc(18px / 1.6);
@@ -16,10 +16,8 @@ html {
     --background-color-2: oklch(35% 0.040 254);
     --background-color-3: oklch(42.1% 0.035 248);
 
-
-
     background-color: var(--background-color-0);
-    color: #eae4e4
+    color: #eae4e4 
 }
 
 

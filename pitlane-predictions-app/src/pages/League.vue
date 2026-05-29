@@ -55,7 +55,7 @@ const nextEventDeadline = computed(() => {
     </div>
 
     <div class="page-sub-title" style="margin: 20px auto 40px">
-        Prediction deadline in {{ nextEventDeadline }}
+        Next prediction deadline in {{ nextEventDeadline }}
     </div>
 
     <div v-if="!!props.league?.name" class="card">
@@ -100,18 +100,12 @@ const nextEventDeadline = computed(() => {
 </template>
 
 <style>
-#League .card,
-.p-datatable-header-cell,
-.p-datatable-tbody > tr,
-.p-datatable-footer {
-    background-color: var(--background-color-1) !important;
-    /* border-color: white !important */
-}
-
 #League .card {
     border-radius: 12px;
     padding: 20px;
     margin-top: 50px;
+
+    background-color: var(--background-color-1) !important;
 }
 
 a {

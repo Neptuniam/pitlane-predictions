@@ -7,6 +7,8 @@ import { calendar } from '@/data/calendar.js';
 
 import { fetchPredictions } from '@/dummy_data/actions.js';
 
+import Select from 'primevue/select';
+
 const props = defineProps({
     user: Object
 });
@@ -54,14 +56,12 @@ function _fetchPredictions() {
         });
 }
 function changePage() {
-    let str = `?userId=${userId.value}&countryId=${page.value-1}`;
-    if (year.value != '2026')
+    let str = `?countryId=${countryId.value}`;
+    if (year.value != today.getFullYear())
         str += `&year=${year.value}`;
-
+        
     window.history.replaceState(null, '', str);
     
-    countryId.value = page.value-1;
-
     predictions.value = null;
     pointsEarned.value = 0;
 
@@ -74,12 +74,16 @@ function changePage() {
     <div class="page-title">
         {{ props.user?.first_name || 'Your' }}'s Prediction Results
     </div>
-    <div class="page-sub-title">
-        {{ calendarEvent.track || calendarEvent.country }}, {{ year }}
-    </div>
-
-    <div class="page-sub-title" style="margin: 20px auto 40px">
-        Total Points Earned: {{ pointsEarned }}
+    <div class="select-center">
+        <Select 
+            v-model="countryId"
+            :options="Object.values(calendar[year])"
+            optionLabel="country"
+            optionValue="track_id"
+            placeholder="Select a Track"
+            @change="changePage"
+            style="min-width: 150px"
+        />
     </div>
 
     <div v-if="!!errorMessage" class="error-message">
@@ -91,61 +95,41 @@ function changePage() {
     <div v-else-if="predictions === null" id="loading-message">
         Loading...
     </div>
-    <div v-else-if="!!predictions && !!predictions.length" id="predictions-container">
-        <div v-for="prediction in predictions"
-            class="prediction-container"
-            :class="{
-                'correct': prediction.correct,
-                'in-correct': !prediction.correct,
-                'type-driver': prediction.type == 'driver',
-                'type-team': prediction.type == 'team'
-            }"
-        >
-            <span class="prediction-category">
-                <span class="text-container" v-html="prediction.title"></span>
-            </span>
-            
-            <span class="prediction-prediction text-container">
-                {{ drivers[prediction.prediction]?.last_name || prediction.prediction }}
-            </span>
+    <template v-else-if="!!predictions && !!predictions.length">
+        <div class="page-sub-title" style="margin: 20px auto 10px">
+            Total Points Earned: {{ pointsEarned }}
+        </div>
 
-            <img v-if="!!prediction.profile" :src="prediction.profile" />
+        <div id="predictions-container">
+            <div v-for="prediction in predictions"
+                class="prediction-container"
+                :class="{
+                    'correct': prediction.correct,
+                    'in-correct': !prediction.correct,
+                    'type-driver': prediction.type == 'driver',
+                    'type-team': prediction.type == 'team'
+                }"
+            >
+                <span class="prediction-category">
+                    <span class="text-container" v-html="prediction.title"></span>
+                </span>
+                
+                <span class="prediction-prediction text-container">
+                    {{ drivers[prediction.prediction]?.last_name || prediction.prediction }}
+                </span>
 
-            <!-- <UTooltip v-if="prediction.points > 1" text="This category had a points multiplier!"> -->
-                <div v-if="prediction.points > 1" class="prediction-points">
+                <img v-if="!!prediction.profile" :src="prediction.profile" />
+
+                <div v-if="prediction.points > 1" class="prediction-points" v-tooltip="'This category had a points multiplier!'">
                     x {{ prediction.points }}
                 </div>
-            <!-- </UTooltip> -->
+            </div>
         </div>
-    </div>
-
-    <!-- <div style="padding: 15px 45px 5px; margin: auto;">
-        <UPagination v-if="pageCount !== null"
-            v-model:page="page"
-            :ui="{ wrapper: 'justify-center'}"
-            :items-per-page="3"
-            :sibling-count="1"
-            :total="pageCount*3"
-            size="xl"
-            @update:page="changePage"
-        >
-            <template #item="{ page, item }">
-                <UButton :color="item.value == page ? 'primary' : 'neutral'" variant="outline" size="xl" style="min-width: 100px; text-align: center;">
-                    {{ calendar[year][item.value-1]?.track || calendar[year][item.value-1]?.country || item.value }}
-                </UButton>
-            </template>
-        </UPagination>
-    </div> -->
+    </template>
 </div>
 </template>
 
 <style scoped>
-#Results {
-
-}
-h1, h2, h3 {
-    
-}
 .error-message {
     font-size: 22px;
     color: red;
@@ -161,9 +145,7 @@ h1, h2, h3 {
 .error-message,
 #loading-message,
 #predictions-container {
-    /* margin: 60px auto; */
-
-    height: calc(100vh - 290px);
+    height: calc(100vh - 250px);
     overflow-y: auto;
     padding: 0px 20px
 }
@@ -175,6 +157,7 @@ h1, h2, h3 {
     padding: 0px 0px;
     margin: 20px auto;
 
+    background-color: var(--background-color-1);
     border: 1px solid grey;
     border-radius: 20px;
 
@@ -189,6 +172,13 @@ h1, h2, h3 {
 }
 .prediction-container.in-correct {
     border-color: var(--colour-error);
+}
+
+.select-center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 0 auto 20px;
 }
 
 .text-container {
@@ -206,7 +196,7 @@ h1, h2, h3 {
     height: 100%;
     width: 210px;
 
-    background-color: var(--background-color-1);
+    background-color: var(--background-color-2);
 }
 .prediction-category>.text-container {
     width: 100%;
@@ -245,10 +235,6 @@ h1, h2, h3 {
     top: 0px;
     right: 0px;
 
-    /* height: 30px;
-    width: 60px; */
-
-    /* background-color: oklch(27.9% .041 260.031); */
     background-color: #EFBF04;
 
     text-align: center;
@@ -256,7 +242,6 @@ h1, h2, h3 {
     padding: 4px 8px 4px 10px;
 
     font-size: var( --text-sub-body-size);
-    /* color: #EFBF04; */
     color: black;
 
     border-end-start-radius: 20px;

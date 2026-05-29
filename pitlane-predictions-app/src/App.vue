@@ -102,19 +102,7 @@ function jumpToPage(item) {
     </main>
 </template>
 
-<style>
-.p-menubar,
-.p-menubar-root-list {
-    background-color: var(--background-color-1) !important;
-}
-.p-menubar-submenu {
-    background-color: var(--background-color-2) !important;
-}
-.p-menubar-item:hover,
-.p-menubar-item-content:hover {
-    background-color: var(--background-color-3) !important;
-}
-
+<style scoped>
 .active-league {
     color: var(--p-primary-color);
 }
