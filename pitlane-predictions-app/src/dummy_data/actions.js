@@ -14,7 +14,7 @@ export const fetchUserInfo = (userId) => {
                     ..._league,
                     users: _league.users.map((_userId, index) => ({
                         ...users.find(__user => __user.id == _userId),
-                        points: Math.ceil(Math.floor(Math.random() * (8 - 1 + 1) + 1) * ((_league.users.length - index) * 1.5))
+                        points: Math.ceil(Math.floor(Math.random() * 8) * ((_league.users.length - index) * 1.5))
                     })).sort((a, b) => b.points - a.points).map((_user, index) => ({
                         ..._user,
                         position: index + 1

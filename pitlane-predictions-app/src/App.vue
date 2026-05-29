@@ -12,18 +12,21 @@ const route = useRoute();
 const router = useRouter();
 
 const userId = ref();
-const leagueId = ref();
-const routeName = ref();
+const leagueId = computed(() => route.params.leagueId ? route.params.leagueId : null);
 
 const user = ref();
 const leagues = ref();
-const league = computed(() => !!leagueId.value && !!leagues.value?.length ? leagues.value.find(_league => _league.id == leagueId.value) : null);
+const league = computed(() => {
+    if (!leagueId.value || !leagues.value?.length)
+        return null;
+    return leagues.value.find(_league => _league.id === leagueId.value) || null;
+});
 
 const items = ref([
     {
         label: 'Dashboard',
         icon: 'pi pi-home',
-        to: '/'
+        path: ''
     },
     {
         label: 'Leagues',
@@ -46,7 +49,6 @@ const items = ref([
 setTimeout(() => {
     userId.value = +route.params.userId;
     leagueId.value = route.params.leagueId;
-    routeName.value = route.name;
 
     fetchUserInfo(userId.value).then(res => {
         console.log(res);
@@ -54,20 +56,18 @@ setTimeout(() => {
         user.value = res.user;
         leagues.value = res.leagues;
 
+        items.value[0].path = `/dashboard/${userId.value}`;
         items.value[1].items = res.leagues.map(_league => ({
             id: _league.id,
             label: _league.name,
-            to: `/league/${_league.id}/${userId.value}`
+            path: `/league/${userId.value}/${_league.id}`
         }));
     })
-}, 100)
+}, 100);
 
 function jumpToPage(item) {
-    if (item.to) {
-        router.push({ path: item.to })
-        leagueId.value = item.id;
-        routeName.value = item.name;
-    }
+    if (item.path) 
+        router.push({ path: item.path });
 }
 </script>
 
@@ -76,13 +76,9 @@ function jumpToPage(item) {
         <Menubar :model="items">
             <template #start>
                 <Avatar image="/logo.jpg" shape="square" />
-                
-                <!-- <span style="position: absolute; left: 90px">
-                    {{ league?.name || routeName }}
-                </span> -->
             </template>
             <template #item="{ item, props, hasSubmenu, root }">
-                <div v-ripple class="flex items-center" :class="{ 'active-league': leagueId && item.id == leagueId }" @click="jumpToPage(item)" v-bind="props.action">
+                <div class="flex items-center" :class="{ 'active-league': leagueId && item.id == leagueId }" @click="jumpToPage(item)" v-bind="props.action">
                     <span>{{ item.label }}</span>
                     <Badge v-if="item.badge" :class="{ 'ml-auto': !root, 'ml-2': root }" :value="item.badge" />
                     <span v-if="item.shortcut" class="ml-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1">
@@ -98,11 +94,18 @@ function jumpToPage(item) {
             </template>
         </Menubar>
 
-        <RouterView v-if="!!user" :user="user" :league="league" />
+        <RouterView v-if="!!user && !!league" :user="user" :league="league" />
+        <RouterView v-else-if="!!user && leagues !== null" :user="user" :leagues="leagues" />
     </main>
 </template>
 
 <style scoped>
+.p-menubar {
+    position: sticky;
+    top: 4px;
+    z-index: 100;
+}
+
 .active-league {
     color: var(--p-primary-color);
 }

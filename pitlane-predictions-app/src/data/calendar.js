@@ -1,3 +1,6 @@
+const _today = new Date();
+const _year = _today.getFullYear();
+
 export const calendar = {
     '2026': {
         0: {
@@ -38,3 +41,25 @@ export const calendar = {
         }
     }
 }
+
+export const latestEvent = Object.values(calendar[_year.toString()]).reverse().find(event => new Date(event.date) < _today);
+export const nextEvent = Object.values(calendar[_year.toString()]).find(event => new Date(event.date) > _today);
+
+export const nextEventDeadline = () => {
+    if (!nextEvent?.date)
+        return null;
+
+    const today = new Date();
+    const target = new Date(nextEvent.date);
+    const diff = target - today;
+
+    if (diff <= 0)
+        return 'Date has passed';
+
+    const minutes = Math.floor(diff / 1000 / 60);
+    const days = Math.floor(minutes / 60 / 24);
+    const hours = Math.floor((minutes % (60 * 24)) / 60);
+    const mins = minutes % 60;
+
+    return `${days} days, ${hours} hours, ${mins} minutes`;
+};

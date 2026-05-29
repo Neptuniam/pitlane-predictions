@@ -1,48 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
-
-import { drivers } from '@/data/drivers.js';
-import { calendar } from '@/data/calendar.js';
-console.log(calendar);
-
+import { latestEvent, nextEvent, nextEventDeadline } from '@/data/calendar.js';
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import router from '@/router';
+import Card from 'primevue/card';
 
 const props = defineProps({
     user: Object,
     league: Object
 });
-
-const latestEvent = computed(() => {
-    const today = new Date();
-    return Object.values(calendar[today.getFullYear()]).reverse().find(event => new Date(event.date) < today);
-});
-const nextEvent = computed(() => {
-    const today = new Date();
-    return Object.values(calendar[today.getFullYear()]).find(event => new Date(event.date) > today);
-});
-const nextEventDeadline = computed(() => {
-    if (!nextEvent.value?.date)
-        return null;
-
-    const today = new Date();
-    const target = new Date(nextEvent.value.date);
-    const diff = target - today;
-
-    if (diff <= 0)
-        return 'Date has passed';
-
-    const minutes = Math.floor(diff / 1000 / 60);
-    const days = Math.floor(minutes / 60 / 24);
-    const hours = Math.floor((minutes % (60 * 24)) / 60);
-    const mins = minutes % 60;
-
-    return `${days} days, ${hours} hours, ${mins} minutes`;
-});
-
 </script>
 
 <template>
@@ -55,57 +21,65 @@ const nextEventDeadline = computed(() => {
     </div>
 
     <div class="page-sub-title" style="margin: 20px auto 40px">
-        Next prediction deadline in {{ nextEventDeadline }}
+        {{ nextEvent?.track || nextEvent?.country }} prediction deadline is in<br>{{ nextEventDeadline() }}
     </div>
 
-    <div v-if="!!props.league?.name" class="card">
-        <DataTable :value="props.league?.users">
-            <Column header="Pos.">
-                <template #body="slotProps">
-                    {{ slotProps.data.position }}.
-                </template>
-            </Column>
+    <Card v-if="!!props.league?.name">
+        <template #content>
+            <DataTable :value="props.league?.users">
+                <Column header="Pos.">
+                    <template #body="slotProps">
+                        {{ slotProps.data.position }}.
+                    </template>
+                </Column>
 
-            <Column header="Name">
-                <template #body="slotProps">
-                    {{ slotProps.data.first_name }} {{ slotProps.data.last_name }}
-                </template>
-            </Column>
+                <Column header="Name">
+                    <template #body="slotProps">
+                        {{ slotProps.data.first_name }} {{ slotProps.data.last_name }}
+                    </template>
+                </Column>
 
-            <Column header="PTS.">
-                <template #body="slotProps">
-                    {{ slotProps.data.points }}
-                </template>
-            </Column>
-        </DataTable>
-    </div>
+                <Column header="PTS.">
+                    <template #body="slotProps">
+                        {{ slotProps.data.points }}
+                    </template>
+                </Column>
+            </DataTable>
+        </template>
+    </Card>
 
-    <div class="card">
-        <router-link :to="`/results/${props.league.id}/${props.user.id}?countryId=${latestEvent.track_id}`">
-            <div v-if="!!latestEvent" class="page-sub-title" style="margin-bottom: 50px">
-                Results for {{ latestEvent?.track || latestEvent?.country }} are in!<br>Click here to see how you did.
-            </div>
-        </router-link>
+    <router-link v-if="!!latestEvent" :to="`/results/${props.user.id}/${props.league.id}?countryId=${latestEvent.track_id}`">
+        <Card v-if="!!props.league?.id">
+            <template #content>
+                <div class="page-sub-title" style="margin-bottom: 0 !important">
+                    Results for {{ latestEvent?.track || latestEvent?.country }} are in!<br>Click here to see how you did.
+                </div>
+            </template>
+        </Card>
+    </router-link>
 
-        <div class="page-sub-title" style="margin-bottom: 0 !important">
-            <router-link v-if="!!nextEvent" :to="`/predict/${props.league.id}/${props.user.id}?countryId=${nextEvent.track_id}`">
-                 {{ nextEvent.track || nextEvent.country }} is next!<br>Click here to make your predictions.
-            </router-link>
-            <span v-else>
+    <router-link v-if="!!nextEvent" :to="`/predict/${props.user.id}/${props.league.id}?countryId=${nextEvent.track_id}`">
+        <Card>
+            <template #content>
+                <div class="page-sub-title" style="margin-bottom: 0 !important">
+                    {{ nextEvent.track || nextEvent.country }} is next!<br>Click here to make your predictions.
+                </div>
+            </template>
+        </Card>
+    </router-link>
+    <Card v-else>
+        <template #content>
+            <span class="page-sub-title" style="margin-bottom: 0 !important">
                 No events left for this year.
             </span>
-        </div>
-    </div>
+        </template> 
+    </Card>
 </div>
 </template>
 
 <style>
-#League .card {
-    border-radius: 12px;
-    padding: 20px;
-    margin-top: 50px;
-
-    background-color: var(--background-color-1) !important;
+#League .p-card {
+    margin-top: 40px;
 }
 
 a {

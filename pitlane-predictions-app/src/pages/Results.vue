@@ -10,52 +10,48 @@ import { fetchPredictions } from '@/dummy_data/actions.js';
 import Select from 'primevue/select';
 
 const props = defineProps({
-    user: Object
+    user: Object,
+    league: Object
 });
 
 const today = new Date();
 const route = useRoute();
-const userId = ref(+route.params.userId);
 const countryId = ref(+route.query.countryId);
 const year = ref(+route.query.year || today.getFullYear());
 const errorMessage = ref();
 const predictions = ref(null);
 const pointsEarned = ref(0);
-const page = ref();
-const pageCount = ref();
 
 const calendarEvent = computed(() => {
     if (countryId.value === undefined || year.value === undefined)
         return null;
     return calendar[year.value][countryId.value];
-})
+});
 const isFutureEvent = computed(() => {
     if (!calendarEvent?.value?.date)
         return false;
     const date = new Date(calendarEvent?.value?.date);
     return date > today;
-})
+});
 
-if (userId.value === undefined || countryId.value === undefined || year.value === undefined) {
-    errorMessage.value = 'Missing user or country query parameters';
+if (countryId.value === undefined || year.value === undefined) {
+    errorMessage.value = 'Missing track information.';
 } else {
-    page.value = countryId.value+1;
-    pageCount.value = Object.keys(calendar[year.value]).length;
-
     _fetchPredictions();
 }
 
 function _fetchPredictions() {
+    errorMessage.value = null;
+    
     if (!isFutureEvent.value)
-        return fetchPredictions(userId.value, calendarEvent?.value.country, year.value).then(_predictions => {
-            errorMessage.value = null;
+        return fetchPredictions(props.user.value.id, calendarEvent?.value.country, year.value).then(_predictions => {
             predictions.value = _predictions;
             pointsEarned.value = _predictions.reduce((n, { correct, points }) => n + (correct ? points : 0), 0);
         }).catch(_error => {
             errorMessage.value = _error;
         });
 }
-function changePage() {
+function changeTrack() {
     let str = `?countryId=${countryId.value}`;
     if (year.value != today.getFullYear())
         str += `&year=${year.value}`;
@@ -81,7 +77,7 @@ function changePage() {
             optionLabel="country"
             optionValue="track_id"
             placeholder="Select a Track"
-            @change="changePage"
+            @change="changeTrack"
             style="min-width: 150px"
         />
     </div>
@@ -145,9 +141,9 @@ function changePage() {
 .error-message,
 #loading-message,
 #predictions-container {
-    height: calc(100vh - 250px);
+    height: calc(100vh - 235px);
     overflow-y: auto;
-    padding: 0px 20px
+    padding: 0px 10px
 }
 .prediction-container {
     position: relative;
@@ -160,8 +156,6 @@ function changePage() {
     background-color: var(--background-color-1);
     border: 1px solid grey;
     border-radius: 20px;
-
-    font-size: 28px;
 
     line-height: 73px;
 
@@ -194,7 +188,6 @@ function changePage() {
     display: inline-block;
 
     height: 100%;
-    width: 210px;
 
     background-color: var(--background-color-2);
 }
@@ -202,7 +195,7 @@ function changePage() {
     width: 100%;
 }
 .prediction-prediction {
-    padding: 0px 20px;
+    padding-left: 20px;
 }
 .prediction-container img {
     position: absolute;
@@ -235,7 +228,7 @@ function changePage() {
     top: 0px;
     right: 0px;
 
-    background-color: #EFBF04;
+    background-color: var(--colour-gold);
 
     text-align: center;
     line-height: 15px;
@@ -245,5 +238,23 @@ function changePage() {
     color: black;
 
     border-end-start-radius: 20px;
+}
+
+@media (max-width: 500px) {
+    .prediction-container {
+        font-size: 18px;
+    }
+    .prediction-category {
+        width: 33%;
+        min-width: 125px;
+    }
+}
+@media (min-width: 500px) {
+    .prediction-container {
+        font-size: 28px;
+    }
+    .prediction-category {
+        width: 210px;
+    }
 }
 </style>
