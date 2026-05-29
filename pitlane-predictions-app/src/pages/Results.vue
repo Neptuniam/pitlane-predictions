@@ -44,7 +44,7 @@ function _fetchPredictions() {
     errorMessage.value = null;
     
     if (!isFutureEvent.value)
-        return fetchPredictions(props.user.value.id, calendarEvent?.value.country, year.value).then(_predictions => {
+        return fetchPredictions(props.user.id, calendarEvent?.value.country, year.value).then(_predictions => {
             predictions.value = _predictions;
             pointsEarned.value = _predictions.reduce((n, { correct, points }) => n + (correct ? points : 0), 0);
         }).catch(_error => {
