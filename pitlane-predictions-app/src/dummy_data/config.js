@@ -74,6 +74,10 @@ export const leagues = [
 export const predictions = [
     {
         user_id: 0,
+        league_id: '23de2-32wds-dsd23',
+        // TODO Need predictions per race weekend
+        country: null,
+        year: null,
         predictions: [
             {
                 category_id: '3231',

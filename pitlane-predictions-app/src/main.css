@@ -50,3 +50,9 @@ html, :root, :host {
     background-color: #ffd700 !important;
     color: #000 !important;
 }
+.select-center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    /* margin: 0 auto 20px; */
+}

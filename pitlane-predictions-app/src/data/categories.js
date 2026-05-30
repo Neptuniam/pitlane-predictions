@@ -99,7 +99,7 @@ export const categories = [
         id: '5636',
         key: 'positions_gained_count',
         title: 'Most Positions<br>Gained',
-        type: 'driver',
+        type: 'integer',
         points: 3
     }, {
         id: '4324',

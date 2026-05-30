@@ -18,15 +18,16 @@ export const fetchUserInfo = (userId) => {
                     })).sort((a, b) => b.points - a.points).map((_user, index) => ({
                         ..._user,
                         position: index + 1
-                    }))
+                    })),
+                    categories: _league.categories.map(_categoryId => categories.find(__category => __category.id == _categoryId))
                 }))
             });
         }, 100);
     });
 }
 
-export const fetchPredictions = (userId, country, year) => {
-    const userPredictions = predictions.find(_predictions => _predictions.user_id == userId);
+export const fetchPredictionResults = (userId, leagueId, country, year) => {
+    const userPredictions = predictions.find(_predictions => _predictions.user_id == userId && _predictions.league_id == leagueId);
 
     if (!userPredictions)
         throw new Error ('Could not find user predictions');
@@ -155,5 +156,18 @@ export const fetchPredictions = (userId, country, year) => {
     }).catch(e => {
         console.error(e);
         throw new Error('Invalid Session');
+    });
+}
+
+export const fetchPredictions = (userId, leagueId, country) => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            const userPredictions = predictions.find(_predictions => _predictions.user_id == userId && _predictions.league_id == leagueId);
+
+            if (!userPredictions)
+                throw new Error ('Could not find user predictions');
+            
+            resolve(userPredictions);
+        }, 100);
     });
 }
